@@ -5,7 +5,7 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCJtRYJj037jJPYd5O5GmbZQgmWEP_6dCQ",
+  apiKey: "AIzaSyBVlnDTixLP7B7o00Ju--amdTnJ86IZHvA",
   authDomain: "ventaconecta-76283.firebaseapp.com",
   projectId: "ventaconecta-76283",
   storageBucket: "ventaconecta-76283.firebasestorage.app",
