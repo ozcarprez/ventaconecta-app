@@ -10,8 +10,8 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
   const [notificado, setNotificado] = useState(false);
 
   const handleOfrecer = () => {
-    onClick();
-    setMostrarModal(true);
+    onClick(); // guarda en firebase
+    setMostrarModal(true); // muestra modal
   };
 
   const handleNotificar = async () => {
@@ -24,6 +24,7 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
         productoId: producto.id,
         vendedorId: user.uid,
         negocioId: producto.negocioId,
+        valorGanancia: producto.valorGanancia, // GANANCIA QUE LE VA A TOCAR
         fecha: new Date().toISOString(),
       });
 
@@ -33,15 +34,6 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
     } finally {
       setNotificando(false);
     }
-  };
-
-  const calcularGanancia = () => {
-    if (producto.tipoComision === "porcentaje") {
-      return ((producto.precio * producto.valorComision) / 100).toFixed(2);
-    } else if (producto.tipoComision === "fijo") {
-      return parseFloat(producto.valorComision).toFixed(2);
-    }
-    return "0.00";
   };
 
   return (
@@ -74,9 +66,12 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
           </p>
         )}
 
-        {(producto.tipoComision && producto.valorComision) && (
-          <p className="text-blue-600 font-semibold text-sm mb-2">
-            Ganancia: ${calcularGanancia()} MXN
+        {producto.valorGanancia && (
+          <p className="text-sm text-gray-700 mb-4">
+            <span className="text-black font-semibold">Ganancia:</span>{" "}
+            <span className="text-green-600 font-semibold">
+              ${producto.valorGanancia} MXN
+            </span>
           </p>
         )}
 

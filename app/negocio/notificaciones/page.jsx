@@ -10,6 +10,7 @@ import {
   where,
   getDoc,
   orderBy,
+  addDoc,
 } from "firebase/firestore";
 import { auth } from "@/firebase/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
@@ -48,6 +49,10 @@ export default function NotificacionesPage() {
 
             return {
               id: docNoti.id,
+              productoId: dataNoti.productoId,
+              vendedorId: dataNoti.vendedorId,
+              negocioId: dataNoti.negocioId,
+              valorGanancia: dataNoti.valorGanancia,
               producto: productoData.nombre || "Producto eliminado",
               vendedor: vendedorData.email || "Vendedor eliminado",
               fecha: new Date(dataNoti.fecha).toLocaleString(),
@@ -62,9 +67,24 @@ export default function NotificacionesPage() {
     fetchNotificaciones();
   }, []);
 
-  const handleMarcarLeido = async (id) => {
-    await deleteDoc(doc(db, "notificaciones", id));
-    setNotificaciones(notificaciones.filter((n) => n.id !== id));
+  const handleMarcarLeido = async (noti) => {
+    try {
+      // Borrar notificación
+      await deleteDoc(doc(db, "notificaciones", noti.id));
+
+      // Crear registro de venta
+      await addDoc(collection(db, "ventas"), {
+        productoId: noti.productoId,
+        vendedorId: noti.vendedorId,
+        negocioId: noti.negocioId,
+        ganancia: noti.valorGanancia,
+        fechaVenta: new Date().toISOString(),
+      });
+
+      setNotificaciones(notificaciones.filter((n) => n.id !== noti.id));
+    } catch (error) {
+      console.error("Error al marcar leído o guardar venta:", error);
+    }
   };
 
   return (
@@ -94,7 +114,7 @@ export default function NotificacionesPage() {
                 <p className="text-gray-500 text-xs">Fecha: {noti.fecha}</p>
               </div>
               <button
-                onClick={() => handleMarcarLeido(noti.id)}
+                onClick={() => handleMarcarLeido(noti)}
                 className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
               >
                 Marcar como leído

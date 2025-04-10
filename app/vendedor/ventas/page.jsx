@@ -1,65 +1,88 @@
 "use client";
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/firebase/firebaseConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  getDoc,
+  doc,
+  orderBy,
+} from "firebase/firestore";
 
-export default function HistorialVentas() {
-  const [productos, setProductos] = useState([]);
+export default function HistorialVentasPage() {
+  const [ventas, setVentas] = useState([]);
 
   useEffect(() => {
-    const obtenerProductosOfrecidos = async () => {
+    const obtenerVentas = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const snapshot = await getDocs(
-        collection(db, `usuarios/${user.uid}/productosOfrecidos`)
+      const q = query(
+        collection(db, "ventas"),
+        where("vendedorId", "==", user.uid),
+        orderBy("fecha", "desc")
       );
 
-      const productosArray = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const productoRef = doc(db, "productos", docSnap.id);
-          const productoDoc = await getDoc(productoRef);
+      const querySnapshot = await getDocs(q);
 
-          return productoDoc.exists()
-            ? { id: productoDoc.id, ...productoDoc.data() }
-            : null;
+      const ventasArray = await Promise.all(
+        querySnapshot.docs.map(async (docVenta) => {
+          const dataVenta = docVenta.data();
+
+          const productoDoc = await getDoc(
+            doc(db, "productos", dataVenta.productoId)
+          );
+          const productoData = productoDoc.exists()
+            ? productoDoc.data()
+            : {};
+
+          return {
+            id: docVenta.id,
+            producto: productoData.nombre || "Producto eliminado",
+            imagenUrl: productoData.imagenUrl || "",
+            valorGanancia: dataVenta.valorGanancia,
+            fecha: new Date(dataVenta.fecha).toLocaleString(),
+          };
         })
       );
 
-      setProductos(productosArray.filter((p) => p)); // eliminamos nulls
+      setVentas(ventasArray);
     };
 
-    obtenerProductosOfrecidos();
+    obtenerVentas();
   }, []);
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4 text-center text-white">
-        Historial de ventas
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">
+        Historial de Ventas
       </h2>
 
-      {productos.length === 0 ? (
-        <p className="text-center text-white">
-          No has ofrecido productos aún.
+      {ventas.length === 0 ? (
+        <p className="text-center text-gray-500">
+          No tienes ventas registradas aún.
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {productos.map((producto) => (
-            <div
-              key={producto.id}
-              className="bg-white p-4 rounded shadow-md"
-            >
-              {producto.imagenUrl && (
-                <img
-                  src={producto.imagenUrl}
-                  alt={producto.nombre}
-                  className="w-full h-40 object-contain mb-2 rounded mx-auto"
-                />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {ventas.map((venta) => (
+            <div key={venta.id} className="bg-white p-4 rounded shadow">
+              {venta.imagenUrl && (
+                <div className="w-full h-40 mb-2 overflow-hidden flex items-center justify-center">
+                  <img
+                    src={venta.imagenUrl}
+                    alt={venta.producto}
+                    className="max-h-full object-contain"
+                  />
+                </div>
               )}
 
-              <h2 className="font-bold text-gray-900">{producto.nombre}</h2>
-              <p className="text-sm text-gray-700">{producto.descripcion}</p>
-              <p className="text-green-600 font-bold">${producto.precio}</p>
+              <h3 className="font-bold text-gray-900">{venta.producto}</h3>
+              <p className="text-green-600 font-bold">
+                Ganancia: ${venta.valorGanancia} MXN
+              </p>
+              <p className="text-gray-500 text-sm">{venta.fecha}</p>
             </div>
           ))}
         </div>
