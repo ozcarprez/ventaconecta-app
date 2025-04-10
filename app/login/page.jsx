@@ -42,21 +42,25 @@ export default function LoginPage() {
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-80">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Iniciar sesión</h2>
+        
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+        
         <input
           type="email"
           placeholder="Correo electrónico"
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black dark:text-white"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+
         <input
           type="password"
           placeholder="Contraseña"
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded text-black dark:text-white"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
@@ -67,3 +71,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

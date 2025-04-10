@@ -1,5 +1,3 @@
-// 1. Actualizamos el componente ProductCard.jsx para agregar el botón de Notificar
-
 "use client";
 import { useState } from "react";
 import OfferModal from "./OfferModal";
@@ -12,8 +10,8 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
   const [notificado, setNotificado] = useState(false);
 
   const handleOfrecer = () => {
-    onClick(); // guarda en firebase
-    setMostrarModal(true); // muestra modal
+    onClick();
+    setMostrarModal(true);
   };
 
   const handleNotificar = async () => {
@@ -35,6 +33,15 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
     } finally {
       setNotificando(false);
     }
+  };
+
+  const calcularGanancia = () => {
+    if (producto.tipoComision === "porcentaje") {
+      return ((producto.precio * producto.valorComision) / 100).toFixed(2);
+    } else if (producto.tipoComision === "fijo") {
+      return parseFloat(producto.valorComision).toFixed(2);
+    }
+    return "0.00";
   };
 
   return (
@@ -67,12 +74,9 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
           </p>
         )}
 
-        {producto.valorGanancia && (
-          <p className="text-sm text-gray-700 mb-4">
-            <span className="text-black font-semibold">Ganancia:</span>{" "}
-            <span className="text-green-600 font-semibold">
-              ${producto.valorGanancia} MXN
-            </span>
+        {(producto.tipoComision && producto.valorComision) && (
+          <p className="text-blue-600 font-semibold text-sm mb-2">
+            Ganancia: ${calcularGanancia()} MXN
           </p>
         )}
 
