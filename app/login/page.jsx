@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -53,21 +54,21 @@ export default function LoginPage() {
           <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
         )}
 
-<input
-  type="email"
-  placeholder="Correo electrónico"
-  className="w-full mb-4 p-2 border border-gray-300 rounded text-black"
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-/>
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          className="w-full mb-4 p-2 border border-gray-300 rounded text-black placeholder-gray-500"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-<input
-  type="password"
-  placeholder="Contraseña"
-  className="w-full mb-4 p-2 border border-gray-300 rounded text-black"
-  value={password}
-  onChange={(e) => setPassword(e.target.value)}
-/>
+        <input
+          type="password"
+          placeholder="Contraseña"
+          className="w-full mb-4 p-2 border border-gray-300 rounded text-black placeholder-gray-500"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
         <button
           type="submit"
