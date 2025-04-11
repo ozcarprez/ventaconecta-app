@@ -68,7 +68,6 @@ export default function NotificacionesPage() {
 
   const handleVentaConfirmada = async (noti) => {
     try {
-      // Registrar venta
       await addDoc(collection(db, "ventas"), {
         productoId: noti.productoId,
         vendedorId: noti.vendedorId,
@@ -77,14 +76,13 @@ export default function NotificacionesPage() {
         fechaVenta: new Date().toISOString(),
       });
 
-      // Eliminar notificación
       await deleteDoc(doc(db, "notificaciones", noti.id));
 
       setNotificaciones(notificaciones.filter((n) => n.id !== noti.id));
 
-      alert("Venta registrada y vendedor notificado.");
+      alert("Venta registrada exitosamente.");
     } catch (error) {
-      console.error("Error al confirmar venta:", error);
+      console.error("Error al registrar venta:", error);
     }
   };
 
