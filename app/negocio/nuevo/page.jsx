@@ -1,141 +1,102 @@
 "use client";
 import { useState } from "react";
 import { db, storage, auth } from "@/firebase/firebaseConfig";
-import { addDoc, collection } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { useRouter } from "next/navigation";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function NuevoProductoPage() {
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [precio, setPrecio] = useState("");
-  const [categoria, setCategoria] = useState("");
-  const [inventario, setInventario] = useState("");
-  const [tipoComision, setTipoComision] = useState("porcentaje");
-  const [valorComision, setValorComision] = useState("");
-  const [imagen, setImagen] = useState(null);
+  const [formData, setFormData] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: "",
+    categoria: "",
+    inventario: "",
+    tipoComision: "Porcentaje",
+    valorGanancia: "",
+    imagen: null,
+  });
+
   const [subiendo, setSubiendo] = useState(false);
-  const [mensaje, setMensaje] = useState("");
-  const router = useRouter();
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    setFormData({
+      ...formData,
+      [name]: files ? files[0] : value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubiendo(true);
-    setMensaje("");
 
     try {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) throw new Error("Usuario no autenticado");
 
       let imagenUrl = "";
-      if (imagen) {
-        const storageRef = ref(storage, `productos/${Date.now()}-${imagen.name}`);
-        await uploadBytes(storageRef, imagen);
+
+      if (formData.imagen) {
+        const storageRef = ref(storage, `productos/${Date.now()}-${formData.imagen.name}`);
+        await uploadBytes(storageRef, formData.imagen);
         imagenUrl = await getDownloadURL(storageRef);
       }
 
       await addDoc(collection(db, "productos"), {
-        nombre,
-        descripcion,
-        precio,
-        categoria,
-        inventario: parseInt(inventario),
-        tipoComision,
-        valorComision,
-        negocioId: user.uid,
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        precio: parseFloat(formData.precio),
+        categoria: formData.categoria,
+        inventario: parseInt(formData.inventario),
+        tipoComision: formData.tipoComision,
+        valorGanancia: parseFloat(formData.valorGanancia),
         imagenUrl,
-        fecha: new Date().toISOString(),
+        negocioId: user.uid,
+        creado: Timestamp.now(),
       });
 
-      setMensaje("Producto subido exitosamente ✔️");
-      setNombre("");
-      setDescripcion("");
-      setPrecio("");
-      setCategoria("");
-      setInventario("");
-      setTipoComision("porcentaje");
-      setValorComision("");
-      setImagen(null);
-      router.push("/negocio");
+      alert("Producto subido correctamente ✅");
 
+      setFormData({
+        nombre: "",
+        descripcion: "",
+        precio: "",
+        categoria: "",
+        inventario: "",
+        tipoComision: "Porcentaje",
+        valorGanancia: "",
+        imagen: null,
+      });
     } catch (error) {
-      console.error("Error:", error);
-      setMensaje("❌ Hubo un error al subir el producto.");
+      console.error("Error al subir producto:", error);
+      alert("Error al subir producto ❌");
     } finally {
       setSubiendo(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-gray-900 text-center">
-          Subir nuevo producto
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow w-80">
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-900">Subir nuevo producto</h2>
 
-        {[
-          { placeholder: "Nombre", value: nombre, set: setNombre },
-          { placeholder: "Descripción", value: descripcion, set: setDescripcion, type: "textarea" },
-          { placeholder: "Precio", value: precio, set: setPrecio, type: "number" },
-          { placeholder: "Categoría", value: categoria, set: setCategoria },
-          { placeholder: "Inventario disponible", value: inventario, set: setInventario, type: "number" },
-        ].map((input, idx) => (
-          input.type === "textarea" ? (
-            <textarea
-              key={idx}
-              placeholder={input.placeholder}
-              value={input.value}
-              onChange={(e) => input.set(e.target.value)}
-              className="w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-600 text-gray-900 mb-4"
-              required
-            />
-          ) : (
-            <input
-              key={idx}
-              type={input.type || "text"}
-              placeholder={input.placeholder}
-              value={input.value}
-              onChange={(e) => input.set(e.target.value)}
-              className="w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-600 text-gray-900 mb-4"
-              required
-            />
-          )
-        ))}
-
-        <select
-          value={tipoComision}
-          onChange={(e) => setTipoComision(e.target.value)}
-          className="w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 mb-4"
-        >
-          <option value="porcentaje">Comisión %</option>
-          <option value="fijo">Pago fijo $</option>
+        <input name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre" className="w-full mb-2 p-2 border rounded text-black" required />
+        <input name="descripcion" value={formData.descripcion} onChange={handleChange} placeholder="Descripción" className="w-full mb-2 p-2 border rounded text-black" required />
+        <input name="precio" value={formData.precio} onChange={handleChange} placeholder="Precio" className="w-full mb-2 p-2 border rounded text-black" required />
+        <input name="categoria" value={formData.categoria} onChange={handleChange} placeholder="Categoría" className="w-full mb-2 p-2 border rounded text-black" required />
+        <input name="inventario" value={formData.inventario} onChange={handleChange} placeholder="Inventario" className="w-full mb-2 p-2 border rounded text-black" required />
+        
+        <select name="tipoComision" value={formData.tipoComision} onChange={handleChange} className="w-full mb-2 p-2 border rounded text-black">
+          <option>Porcentaje</option>
+          <option>Fijo</option>
         </select>
 
-        <input
-          type="number"
-          placeholder={tipoComision === "porcentaje" ? "Porcentaje de comisión" : "Pago fijo en MXN"}
-          value={valorComision}
-          onChange={(e) => setValorComision(e.target.value)}
-          className="w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-600 text-gray-900 mb-4"
-          required
-        />
+        <input name="valorGanancia" value={formData.valorGanancia} onChange={handleChange} placeholder="Valor comisión" className="w-full mb-2 p-2 border rounded text-black" required />
+        <input type="file" name="imagen" onChange={handleChange} accept="image/*" className="w-full mb-4 text-black" required />
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImagen(e.target.files[0])}
-          className="w-full p-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 mb-4"
-        />
-
-        <button
-          type="submit"
-          disabled={subiendo}
-          className="bg-green-600 text-white py-2 rounded hover:bg-green-700 w-full"
-        >
+        <button type="submit" className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">
           {subiendo ? "Subiendo..." : "Subir producto"}
         </button>
-
-        {mensaje && <p className="mt-4 text-center">{mensaje}</p>}
       </form>
     </div>
   );
