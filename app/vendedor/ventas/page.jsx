@@ -1,49 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/firebase/firebaseConfig";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  getDoc,
-  doc,
-  orderBy,
-} from "firebase/firestore";
 
-export default function HistorialVentasPage() {
+export default function HistorialVentas() {
   const [ventas, setVentas] = useState([]);
 
   useEffect(() => {
-    const obtenerVentas = async () => {
+    const fetchVentas = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const q = query(
-        collection(db, "ventas"),
-        where("vendedorId", "==", user.uid),
-        orderBy("fecha", "desc")
+      const snapshot = await getDocs(
+        collection(db, `usuarios/${user.uid}/historialVentas`)
       );
 
-      const querySnapshot = await getDocs(q);
-
       const ventasArray = await Promise.all(
-        querySnapshot.docs.map(async (docVenta) => {
-          const dataVenta = docVenta.data();
+        snapshot.docs.map(async (ventaDoc) => {
+          const dataVenta = ventaDoc.data();
 
           const productoDoc = await getDoc(
             doc(db, "productos", dataVenta.productoId)
           );
-          const productoData = productoDoc.exists()
-            ? productoDoc.data()
-            : {};
+
+          const productoData = productoDoc.exists() ? productoDoc.data() : {};
 
           return {
-            id: docVenta.id,
-            producto: productoData.nombre || "Producto eliminado",
+            id: ventaDoc.id,
+            nombre: productoData.nombre || "Producto eliminado",
+            descripcion: productoData.descripcion || "",
             imagenUrl: productoData.imagenUrl || "",
-            valorGanancia: dataVenta.valorGanancia,
-            fecha: new Date(dataVenta.fecha).toLocaleString(),
+            precio: productoData.precio || "",
+            ganancia: dataVenta.ganancia || "",
+            fechaVenta: new Date(dataVenta.fechaVenta).toLocaleString(),
           };
         })
       );
@@ -51,38 +40,43 @@ export default function HistorialVentasPage() {
       setVentas(ventasArray);
     };
 
-    obtenerVentas();
+    fetchVentas();
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">
-        Historial de Ventas
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4 text-center text-white">
+        Historial de ventas
       </h2>
 
       {ventas.length === 0 ? (
-        <p className="text-center text-gray-500">
+        <p className="text-center text-white">
           No tienes ventas registradas aún.
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {ventas.map((venta) => (
-            <div key={venta.id} className="bg-white p-4 rounded shadow">
+            <div
+              key={venta.id}
+              className="bg-white p-4 rounded shadow-md"
+            >
               {venta.imagenUrl && (
-                <div className="w-full h-40 mb-2 overflow-hidden flex items-center justify-center">
-                  <img
-                    src={venta.imagenUrl}
-                    alt={venta.producto}
-                    className="max-h-full object-contain"
-                  />
-                </div>
+                <img
+                  src={venta.imagenUrl}
+                  alt={venta.nombre}
+                  className="w-full h-40 object-contain mb-2 rounded mx-auto"
+                />
               )}
 
-              <h3 className="font-bold text-gray-900">{venta.producto}</h3>
-              <p className="text-green-600 font-bold">
-                Ganancia: ${venta.valorGanancia} MXN
+              <h2 className="font-bold text-gray-900">{venta.nombre}</h2>
+              <p className="text-sm text-gray-700">{venta.descripcion}</p>
+              <p className="text-green-600 font-bold mb-1">
+                Precio venta: ${venta.precio}
               </p>
-              <p className="text-gray-500 text-sm">{venta.fecha}</p>
+              <p className="text-blue-600 font-bold mb-1">
+                Ganancia: ${venta.ganancia}
+              </p>
+              <p className="text-gray-500 text-xs">{venta.fechaVenta}</p>
             </div>
           ))}
         </div>
