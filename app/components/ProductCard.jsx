@@ -2,24 +2,18 @@
 import { useState, useEffect } from "react";
 import OfferModal from "./OfferModal";
 import { db, auth } from "@/firebase/firebaseConfig";
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  onSnapshot,
-} from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
 
 export default function ProductCard({ producto, yaOfrecido, onClick }) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [notificando, setNotificando] = useState(false);
   const [notificado, setNotificado] = useState(false);
-  const [ofrecido, setOfrecido] = useState(yaOfrecido);
 
   useEffect(() => {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user || !yaOfrecido) return;
 
+    // Revisamos en tiempo real si ya existe notificación
     const q = query(
       collection(db, "notificaciones"),
       where("productoId", "==", producto.id),
@@ -27,19 +21,15 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (snapshot.empty) {
-        setOfrecido(false); // puede volver a ofrecer
-      } else {
-        setOfrecido(true); // ya ofreció
-      }
+      setNotificado(!snapshot.empty);
     });
 
     return () => unsubscribe();
-  }, [producto.id]);
+  }, [producto.id, yaOfrecido]);
 
   const handleOfrecer = () => {
-    onClick(); // guarda en firebase
-    setMostrarModal(true); // muestra modal
+    onClick(); // guardar en firebase productosOfrecidos
+    setMostrarModal(true); // abre modal con info para copiar
   };
 
   const handleNotificar = async () => {
@@ -55,8 +45,6 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
         valorGanancia: producto.valorGanancia,
         fecha: new Date().toISOString(),
       });
-
-      setNotificado(true);
     } catch (error) {
       console.error("Error al notificar al negocio:", error);
     } finally {
@@ -68,7 +56,7 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
     <>
       <div
         className={`bg-white rounded-lg shadow-md p-4 ${
-          ofrecido ? "opacity-50 border border-gray-400" : ""
+          yaOfrecido ? "opacity-50 border border-gray-400" : ""
         }`}
       >
         {producto.imagenUrl && (
@@ -103,29 +91,31 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
           </p>
         )}
 
-        <button
-          onClick={handleOfrecer}
-          className={`w-full py-2 rounded transition mb-2 ${
-            ofrecido
-              ? "bg-gray-500 text-white cursor-not-allowed"
-              : "bg-green-600 text-white hover:bg-green-700"
-          }`}
-          disabled={ofrecido}
-        >
-          {ofrecido ? "Ya ofrecido" : "Ofrecer producto"}
-        </button>
+        {!yaOfrecido && (
+          <button
+            onClick={handleOfrecer}
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition mb-2"
+          >
+            Ofrecer producto
+          </button>
+        )}
 
-        {ofrecido && (
+        {yaOfrecido && !notificado && (
           <button
             onClick={handleNotificar}
-            className={`w-full py-2 rounded transition text-white ${
-              notificado
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-            disabled={notificando || notificado}
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            disabled={notificando}
           >
-            {notificado ? "Notificado ✔" : "Notificar al negocio"}
+            {notificando ? "Enviando..." : "Notificar al negocio"}
+          </button>
+        )}
+
+        {yaOfrecido && notificado && (
+          <button
+            disabled
+            className="w-full bg-gray-400 text-white py-2 rounded cursor-not-allowed"
+          >
+            Notificado ✔
           </button>
         )}
       </div>
