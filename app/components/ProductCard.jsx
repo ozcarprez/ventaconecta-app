@@ -1,13 +1,41 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import OfferModal from "./OfferModal";
 import { db, auth } from "@/firebase/firebaseConfig";
-import { collection, addDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
 
 export default function ProductCard({ producto, yaOfrecido, onClick }) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [notificando, setNotificando] = useState(false);
   const [notificado, setNotificado] = useState(false);
+  const [ofrecido, setOfrecido] = useState(yaOfrecido);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const q = query(
+      collection(db, "notificaciones"),
+      where("productoId", "==", producto.id),
+      where("vendedorId", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
+        setOfrecido(false); // puede volver a ofrecer
+      } else {
+        setOfrecido(true); // ya ofreció
+      }
+    });
+
+    return () => unsubscribe();
+  }, [producto.id]);
 
   const handleOfrecer = () => {
     onClick(); // guarda en firebase
@@ -24,7 +52,7 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
         productoId: producto.id,
         vendedorId: user.uid,
         negocioId: producto.negocioId,
-        valorGanancia: producto.valorGanancia, // GANANCIA QUE LE VA A TOCAR
+        valorGanancia: producto.valorGanancia,
         fecha: new Date().toISOString(),
       });
 
@@ -40,7 +68,7 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
     <>
       <div
         className={`bg-white rounded-lg shadow-md p-4 ${
-          yaOfrecido ? "opacity-50 border border-gray-400" : ""
+          ofrecido ? "opacity-50 border border-gray-400" : ""
         }`}
       >
         {producto.imagenUrl && (
@@ -78,16 +106,16 @@ export default function ProductCard({ producto, yaOfrecido, onClick }) {
         <button
           onClick={handleOfrecer}
           className={`w-full py-2 rounded transition mb-2 ${
-            yaOfrecido
+            ofrecido
               ? "bg-gray-500 text-white cursor-not-allowed"
               : "bg-green-600 text-white hover:bg-green-700"
           }`}
-          disabled={yaOfrecido}
+          disabled={ofrecido}
         >
-          {yaOfrecido ? "Ya ofrecido" : "Ofrecer producto"}
+          {ofrecido ? "Ya ofrecido" : "Ofrecer producto"}
         </button>
 
-        {yaOfrecido && (
+        {ofrecido && (
           <button
             onClick={handleNotificar}
             className={`w-full py-2 rounded transition text-white ${
