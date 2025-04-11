@@ -5,12 +5,12 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBVlnDTixLP7B7o00Ju--amdTnJ86IZHvA",
-  authDomain: "ventaconecta-76283.firebaseapp.com",
-  projectId: "ventaconecta-76283",
-  storageBucket: "ventaconecta-76283.firebasestorage.app",
-  messagingSenderId: "812623879124",
-  appId: "1:812623879124:web:10fdd4475097a572fc5441",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -21,7 +21,6 @@ const storage = getStorage(app);
 
 export { auth, db, storage };
 
-// Listener para detectar si hay usuario logueado (se ejecuta SIEMPRE)
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("Usuario sigue logueado:", user.email);
