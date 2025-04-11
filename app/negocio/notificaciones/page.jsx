@@ -6,11 +6,11 @@ import {
   deleteDoc,
   doc,
   getDocs,
-  getDoc,
-  setDoc,
   query,
   where,
+  getDoc,
   orderBy,
+  addDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -49,13 +49,11 @@ export default function NotificacionesPage() {
             return {
               id: docNoti.id,
               productoId: dataNoti.productoId,
-              producto: productoData.nombre || "Producto eliminado",
-              descripcion: productoData.descripcion || "",
-              precio: productoData.precio || "",
-              imagenUrl: productoData.imagenUrl || "",
-              valorGanancia: dataNoti.valorGanancia || 0,
-              vendedor: vendedorData.email || "Vendedor eliminado",
               vendedorId: dataNoti.vendedorId,
+              negocioId: dataNoti.negocioId,
+              valorGanancia: dataNoti.valorGanancia,
+              producto: productoData.nombre || "Producto eliminado",
+              vendedor: vendedorData.email || "Vendedor eliminado",
               fecha: new Date(dataNoti.fecha).toLocaleString(),
             };
           })
@@ -68,26 +66,23 @@ export default function NotificacionesPage() {
     fetchNotificaciones();
   }, []);
 
-  const handleConfirmarVenta = async (noti) => {
+  const handleVentaConfirmada = async (noti) => {
     try {
-      // Guardar en historial de ventas del vendedor
-      await setDoc(
-        doc(db, `usuarios/${noti.vendedorId}/historialVentas/${noti.productoId}`),
-        {
-          productoId: noti.productoId,
-          nombre: noti.producto,
-          descripcion: noti.descripcion,
-          precio: noti.precio,
-          imagenUrl: noti.imagenUrl,
-          valorGanancia: noti.valorGanancia,
-          fechaVenta: new Date().toISOString(),
-        }
-      );
+      // Registrar venta
+      await addDoc(collection(db, "ventas"), {
+        productoId: noti.productoId,
+        vendedorId: noti.vendedorId,
+        negocioId: noti.negocioId,
+        ganancia: noti.valorGanancia,
+        fechaVenta: new Date().toISOString(),
+      });
 
       // Eliminar notificación
       await deleteDoc(doc(db, "notificaciones", noti.id));
 
       setNotificaciones(notificaciones.filter((n) => n.id !== noti.id));
+
+      alert("Venta registrada y vendedor notificado.");
     } catch (error) {
       console.error("Error al confirmar venta:", error);
     }
@@ -117,13 +112,17 @@ export default function NotificacionesPage() {
                 <p className="text-gray-700 text-sm">
                   Vendedor: {noti.vendedor}
                 </p>
+                <p className="text-green-700 text-sm">
+                  Ganancia vendedor: ${noti.valorGanancia} MXN
+                </p>
                 <p className="text-gray-500 text-xs">Fecha: {noti.fecha}</p>
               </div>
+
               <button
-                onClick={() => handleConfirmarVenta(noti)}
+                onClick={() => handleVentaConfirmada(noti)}
                 className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
               >
-                Confirmar venta
+                Producto vendido
               </button>
             </div>
           ))}
